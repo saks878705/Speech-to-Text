@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #2c3e50, #8e44ad);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #output {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeIn 1s ease;
+        }
+
+        .text {
+            margin: 5px;
+            padding: 8px 12px;
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white background */
+            border-radius: 4px;
+            animation: slideIn 0.5s ease;
+            white-space: nowrap;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Speech to Text</h1>
+        <div id="output"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.3.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        const capitalizeFirstLetter = (sentence) => {
+            return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+        };
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.lang = ''; // Automatic language detection
+
+        recognition.onresult = function(event) {
+            const result = event.results[event.results.length - 1][0].transcript;
+            let output = '';
+            for (let i = 0; i < result.length; i++) {
+                output += i === 0 ? capitalizeFirstLetter(result.charAt(i)) : result.charAt(i);
+            }
+            document.getElementById('output').innerText += ' ' + output;
+            socket.emit('speechToText', output);
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+        };
+
+        recognition.onend = function() {
+            recognition.start(); // Restart recognition after it ends
+        };
+
+        recognition.start(); // Start speech recognition
+
+        /*socket.on('speechToText', function(data) {
+            let output = '';
+            for (let i = 0; i < data.length; i++) {
+                output += i === 0 ? capitalizeFirstLetter(data.charAt(i)) : data.charAt(i);
+            }
+            document.getElementById('output').innerText += ' ' + output;
+        });*/
+    </script>
+</body>
+</html>
